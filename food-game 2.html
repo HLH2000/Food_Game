@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>食物分類遊戲 🍔</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --meat: #FF6B6B;
+    --veg: #51CF66;
+    --fruit: #FF922B;
+    --dessert: #CC5DE8;
+    --bg: #FFF9F0;
+    --card-bg: #FFFFFF;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(255,107,107,0.07) 0%, transparent 50%),
+      radial-gradient(circle at 90% 80%, rgba(204,93,232,0.07) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(81,207,102,0.05) 0%, transparent 70%);
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #FF6B6B 0%, #FF922B 50%, #CC5DE8 100%);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 20px rgba(255,107,107,0.3);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  header h1 {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.8rem;
+    color: white;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+  }
+
+  .stats {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .stat-pill {
+    background: rgba(255,255,255,0.25);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 50px;
+    padding: 6px 16px;
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stat-pill span { font-size: 1.1rem; }
+
+  /* ── MESSAGE BAR ── */
+  #message-bar {
+    margin: 16px 24px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    display: none;
+    animation: slideDown 0.3s ease;
+  }
+  #message-bar.show { display: block; }
+  #message-bar.info { background: #E3F2FD; color: #1565C0; border-left: 4px solid #1565C0; }
+  #message-bar.success { background: #E8F5E9; color: #2E7D32; border-left: 4px solid #2E7D32; }
+  #message-bar.error { background: #FFEBEE; color: #C62828; border-left: 4px solid #C62828; }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+    padding: 0 24px 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* ── HAND (LEFT) ── */
+  .hand-panel {
+    background: white;
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    height: fit-content;
+    position: sticky;
+    top: 80px;
+  }
+
+  .hand-panel h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #F0F0F0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hand-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .hand-grid::-webkit-scrollbar { width: 4px; }
+  .hand-grid::-webkit-scrollbar-track { background: #F5F5F5; border-radius: 4px; }
+  .hand-grid::-webkit-scrollbar-thumb { background: #DDD; border-radius: 4px; }
+
+  .card {
+    background: white;
+    border-radius: 12px;
+    border: 2.5px solid #EEE;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+
+  .card.selected {
+    border-color: #FF6B6B;
+    box-shadow: 0 0 0 3px rgba(255,107,107,0.25);
+    transform: translateY(-3px);
+  }
+
+  .card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #FF6B6B;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  .card img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+  }
+
+  .card .card-name {
+    padding: 5px 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-align: center;
+    color: #333;
+    background: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card.special-card { border-color: #CC5DE8; }
+  .card.special-card .card-name { color: #CC5DE8; }
+
+  .empty-hand {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 20px;
+    color: #28A745;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  /* ── BOARD (RIGHT) ── */
+  .board {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .categories-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .category-zone {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+
+  .category-zone.drag-over {
+    box-shadow: 0 0 0 3px var(--zone-color), var(--shadow);
+  }
+
+  .cat-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .cat-header h3 {
+    font-size: 1rem;
+    font-weight: 800;
+    color: white;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.15);
+  }
+
+  .zone-meat .cat-header { background: linear-gradient(135deg, #FF6B6B, #FA5252); }
+  .zone-veg .cat-header { background: linear-gradient(135deg, #51CF66, #2F9E44); }
+  .zone-fruit .cat-header { background: linear-gradient(135deg, #FF922B, #E67700); }
+  .zone-dessert .cat-header { background: linear-gradient(135deg, #CC5DE8, #AE3EC9); }
+
+  .place-btn {
+    background: rgba(255,255,255,0.3);
+    border: 1.5px solid rgba(255,255,255,0.6);
+    color: white;
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  .place-btn:hover { background: rgba(255,255,255,0.5); }
+
+  .placed-items {
+    padding: 12px;
+    min-height: 60px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-content: flex-start;
+  }
+
+  .placed-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 8px;
+    padding: 4px 8px 4px 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 2px solid #EEE;
+    background: #F8F8F8;
+    cursor: default;
+    transition: all 0.2s;
+    max-width: 130px;
+  }
+
+  .placed-chip img {
+    width: 32px;
+    height: 32px;
+    border-radius: 5px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .placed-chip .chip-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #333;
+  }
+
+  .placed-chip.correct { border-color: #51CF66; background: #EBFBEE; }
+  .placed-chip.correct .chip-name { color: #2F9E44; }
+  .placed-chip.wrong { border-color: #FF6B6B; background: #FFF5F5; }
+  .placed-chip.wrong .chip-name { color: #C92A2A; }
+  .placed-chip.locked { border-color: #51CF66; background: #EBFBEE; opacity: 0.7; }
+
+  .remove-btn {
+    background: none;
+    border: none;
+    color: #AAA;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0 0 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .remove-btn:hover { color: #FF6B6B; }
+
+  /* ── BOTTOM CONTROLS ── */
+  .controls {
+    display: flex;
+    gap: 12px;
+    padding: 0;
+  }
+
+  .btn {
+    padding: 14px 28px;
+    border-radius: 12px;
+    border: none;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: all 0.2s;
+    flex: 1;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #FF6B6B, #CC5DE8);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+  }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255,107,107,0.5); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: white;
+    color: #555;
+    border: 2px solid #E0E0E0;
+  }
+  .btn-secondary:hover { background: #F5F5F5; transform: translateY(-2px); }
+
+  /* ── PROGRESS ── */
+  .progress-bar-wrap {
+    background: #EEE;
+    border-radius: 50px;
+    height: 6px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #51CF66, #20C997);
+    border-radius: 50px;
+    transition: width 0.5s ease;
+  }
+
+  /* ── CONFETTI ── */
+  .confetti-piece {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    animation: confettiFall linear forwards;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  @keyframes confettiFall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ── HINT TIPS ── */
+  .tips {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: #FFFBF0;
+    border-radius: 10px;
+    border-left: 3px solid #FF922B;
+    font-size: 0.78rem;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  /* ── SCORE ANIMATION ── */
+  .score-pop {
+    position: fixed;
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #FF6B6B;
+    pointer-events: none;
+    animation: scorePop 1.2s ease forwards;
+    z-index: 9999;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+  }
+  @keyframes scorePop {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    50% { opacity: 1; transform: translateY(-40px) scale(1.3); }
+    100% { opacity: 0; transform: translateY(-80px) scale(0.8); }
+  }
+
+  /* special badge */
+  .special-badge {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: #CC5DE8;
+    color: white;
+    font-size: 9px;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <h1>🍽️ 食物分類遊戲</h1>
+  <div class="stats">
+    <div class="stat-pill"><span>⭐</span> 總分 <strong id="score-display">0</strong></div>
+    <div class="stat-pill"><span>🔢</span> 提交 <strong id="submit-count">0</strong> 次</div>
+    <div class="stat-pill"><span>💎</span> 每題 <strong id="pts-display">50</strong> 分</div>
+  </div>
+</header>
+
+<!-- MESSAGE -->
+<div id="message-bar"></div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT: HAND -->
+  <div class="hand-panel">
+    <h2>🎴 手牌 <span id="hand-count" style="color:#999;font-weight:500;">(0 張)</span></h2>
+    <div class="hand-grid" id="hand-grid"></div>
+    <div class="tips">
+      💡 <strong>操作方式</strong><br>
+      1. 點擊手牌選取卡片<br>
+      2. 點擊類別區「放入」按鈕<br>
+      3. 特殊卡 ★ 可放兩個類別！
+    </div>
+    <div class="progress-bar-wrap" style="margin-top:12px;">
+      <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+    </div>
+    <div style="font-size:0.75rem;color:#999;margin-top:4px;text-align:right;" id="progress-text">進度 0%</div>
+  </div>
+
+  <!-- RIGHT: BOARD -->
+  <div class="board">
+    <div class="categories-grid" id="cat-grid"></div>
+    <div class="controls">
+      <button class="btn btn-primary" id="submit-btn" onclick="submitAnswers()">✅ 提交答案</button>
+      <button class="btn btn-secondary" onclick="restartGame()">🔄 重新開始</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── GAME DATA ───
+const GITHUB_BASE = "https://raw.githubusercontent.com/homuch/food-classify-game/main/食物圖/";
+
+const CATEGORIES = [
+  { id: "meat",    label: "🥩 肉類 / 海鮮", cls: "zone-meat",    color: "#FF6B6B" },
+  { id: "veg",     label: "🥦 蔬菜",         cls: "zone-veg",     color: "#51CF66" },
+  { id: "fruit",   label: "🍎 水果",         cls: "zone-fruit",   color: "#FF922B" },
+  { id: "dessert", label: "🧁 甜點 / 飲料",  cls: "zone-dessert", color: "#CC5DE8" },
+];
+
+// Cards: name → { valid: [catId...], special: bool }
+const CARDS = {
+  // 肉類/海鮮
+  "培根":  { valid: ["meat"], special: false },
+  "牛排":  { valid: ["meat"], special: false },
+  "炸雞":  { valid: ["meat"], special: false },
+  "烤雞腿":{ valid: ["meat"], special: false },
+  "熟蝦":  { valid: ["meat"], special: false },
+  "鮭魚":  { valid: ["meat"], special: false },
+  "鮪魚":  { valid: ["meat"], special: false },
+  "龍蝦":  { valid: ["meat"], special: false },
+  "螃蟹":  { valid: ["meat"], special: false },
+  "扇貝":  { valid: ["meat"], special: false },
+  "臘肉":  { valid: ["meat"], special: false },
+  "雞排":  { valid: ["meat"], special: false },
+  // 蔬菜
+  "南瓜":   { valid: ["veg"], special: false },
+  "大白菜": { valid: ["veg"], special: false },
+  "彩椒":   { valid: ["veg"], special: false },
+  "玉米":   { valid: ["veg"], special: false },
+  "白蘿蔔": { valid: ["veg"], special: false },
+  "紫甘藍": { valid: ["veg"], special: false },
+  "茄子":   { valid: ["veg"], special: false },
+  "蘆筍":   { valid: ["veg"], special: false },
+  "青花菜": { valid: ["veg"], special: false },
+  "杏鮑菇": { valid: ["veg"], special: false },
+  "蕈菇":   { valid: ["veg"], special: false },
+  // 水果
+  "奇異果": { valid: ["fruit"], special: false },
+  "木瓜":   { valid: ["fruit"], special: false },
+  "橘子":   { valid: ["fruit"], special: false },
+  "水蜜桃": { valid: ["fruit"], special: false },
+  "西瓜":   { valid: ["fruit"], special: false },
+  "藍莓":   { valid: ["fruit"], special: false },
+  // 甜點/飲料
+  "千層派":   { valid: ["dessert"], special: false },
+  "巧克力":   { valid: ["dessert"], special: false },
+  "巧克力豆餅":{ valid: ["dessert"], special: false },
+  "甜甜圈":   { valid: ["dessert"], special: false },
+  "湯圓":     { valid: ["dessert"], special: false },
+  "糖果":     { valid: ["dessert"], special: false },
+  "糖葫蘆":   { valid: ["dessert"], special: false },
+  "鯛魚燒":   { valid: ["dessert"], special: false },
+  "優格":     { valid: ["dessert"], special: false },
+  "優酪乳":   { valid: ["dessert"], special: false },
+  "珍珠奶茶": { valid: ["dessert"], special: false },
+  "爆米花":   { valid: ["dessert"], special: false },
+  // ★ Special (multi-category)
+  "★藍莓起司蛋糕": { valid: ["fruit", "dessert"], special: true },
+  "★披薩":         { valid: ["meat", "veg"], special: true },
+  "★涼拌豆腐":     { valid: ["veg", "dessert"], special: true },
+  "★滷肉飯":       { valid: ["meat", "veg"], special: true },
+};
+
+// Map special card names to image filenames
+const IMG_OVERRIDE = {
+  "★藍莓起司蛋糕": "藍莓起司蛋糕",
+  "★披薩":         "披薩",
+  "★涼拌豆腐":     "涼拌豆腐",
+  "★滷肉飯":       "滷肉飯",
+};
+
+function getImgUrl(name) {
+  const base = IMG_OVERRIDE[name] || name;
+  return GITHUB_BASE + encodeURIComponent(base) + ".jpg";
+}
+
+const BASE_SCORE = 50;
+
+// ─── STATE ───
+let state = {};
+
+function initState() {
+  const deck = Object.keys(CARDS);
+  // shuffle
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  state = {
+    score: 0,
+    submitCount: 0,
+    locked: false,
+    scored: new Set(),
+    selected: new Set(),
+    result: {},
+    placed: { meat: [], veg: [], fruit: [], dessert: [] },
+    deck,
+  };
+}
+
+function getMultiplier() { return 1 / (2 ** state.submitCount); }
+function getPtsPerCorrect() { return Math.max(1, Math.round(BASE_SCORE * getMultiplier())); }
+
+function getRemainingCards() {
+  return state.deck.filter(name => {
+    const info = CARDS[name];
+    if (info.special) {
+      const placedCount = CATEGORIES.filter(c => state.placed[c.id].includes(name)).length;
+      return placedCount < info.valid.length;
+    } else {
+      return !CATEGORIES.some(c => state.placed[c.id].includes(name));
+    }
+  });
+}
+
+function getTotalNeeded() {
+  return Object.values(CARDS).reduce((s, c) => s + c.valid.length, 0);
+}
+
+// ─── UI HELPERS ───
+function showMessage(text, type = "info") {
+  const bar = document.getElementById("message-bar");
+  bar.textContent = text;
+  bar.className = `show ${type}`;
+  clearTimeout(bar._timer);
+  bar._timer = setTimeout(() => bar.className = "", 4000);
+}
+
+function updateStats() {
+  document.getElementById("score-display").textContent = state.score;
+  document.getElementById("submit-count").textContent = state.submitCount;
+  document.getElementById("pts-display").textContent = getPtsPerCorrect();
+
+  const rem = getRemainingCards();
+  const total = state.deck.length;
+  const placed = total - rem.length;
+  // progress: unique placed slots / total needed
+  const prog = Math.round((state.scored.size / getTotalNeeded()) * 100);
+  document.getElementById("progress-bar").style.width = prog + "%";
+  document.getElementById("progress-text").textContent = `進度 ${prog}%`;
+
+  document.getElementById("submit-btn").disabled = state.locked;
+}
+
+function scorePopup(pts, x, y) {
+  const el = document.createElement("div");
+  el.className = "score-pop";
+  el.textContent = "+" + pts + "分";
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+function launchConfetti() {
+  const colors = ["#FF6B6B","#51CF66","#FF922B","#CC5DE8","#4DABF7","#FDE68A"];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement("div");
+    el.className = "confetti-piece";
+    el.style.left = Math.random() * 100 + "vw";
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (1.5 + Math.random() * 2) + "s";
+    el.style.animationDelay = (Math.random() * 0.5) + "s";
+    el.style.width = el.style.height = (6 + Math.random() * 8) + "px";
+    el.style.borderRadius = Math.random() > 0.5 ? "50%" : "2px";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+}
+
+// ─── RENDER ───
+function renderHand() {
+  const rem = getRemainingCards();
+  const grid = document.getElementById("hand-grid");
+  document.getElementById("hand-count").textContent = `(${rem.length} 張)`;
+  grid.innerHTML = "";
+
+  if (rem.length === 0) {
+    grid.innerHTML = '<div class="empty-hand">🎉 手牌已清空！</div>';
+    return;
+  }
+
+  rem.forEach(name => {
+    const info = CARDS[name];
+    const isSel = state.selected.has(name);
+    const div = document.createElement("div");
+    div.className = "card" + (isSel ? " selected" : "") + (info.special ? " special-card" : "");
+    div.onclick = () => toggleSelect(name);
+
+    if (info.special) {
+      const badge = document.createElement("div");
+      badge.className = "special-badge";
+      badge.textContent = "★";
+      div.appendChild(badge);
+    }
+
+    const img = document.createElement("img");
+    img.src = getImgUrl(name);
+    img.alt = name;
+    img.onerror = () => { img.src = ""; img.style.display = "none"; };
+    div.appendChild(img);
+
+    const nameDiv = document.createElement("div");
+    nameDiv.className = "card-name";
+    nameDiv.textContent = name;
+    div.appendChild(nameDiv);
+
+    grid.appendChild(div);
+  });
+}
+
+function renderBoard() {
+  const grid = document.getElementById("cat-grid");
+  grid.innerHTML = "";
+
+  CATEGORIES.forEach(cat => {
+    const zone = document.createElement("div");
+    zone.className = `category-zone ${cat.cls}`;
+    zone.style.setProperty("--zone-color", cat.color);
+
+    // header
+    const header = document.createElement("div");
+    header.className = "cat-header";
+    const h3 = document.createElement("h3");
+    h3.textContent = cat.label;
+    header.appendChild(h3);
+    const btn = document.createElement("button");
+    btn.className = "place-btn";
+    btn.textContent = "📥 放入";
+    btn.onclick = () => placeSelected(cat.id);
+    header.appendChild(btn);
+    zone.appendChild(header);
+
+    // placed items
+    const items = document.createElement("div");
+    items.className = "placed-items";
+
+    const placed = state.placed[cat.id];
+    if (placed.length === 0) {
+      const cap = document.createElement("div");
+      cap.style.cssText = "color:#CCC;font-size:0.8rem;padding:4px;";
+      cap.textContent = "尚無卡片";
+      items.appendChild(cap);
+    } else {
+      placed.forEach(name => {
+        const key = name + "|" + cat.id;
+        const isLocked = state.scored.has(key);
+        const resStatus = state.result[key];
+
+        const chip = document.createElement("div");
+        chip.className = "placed-chip" + (isLocked ? " locked correct" : (resStatus === "wrong" ? " wrong" : (resStatus === "correct" ? " correct" : "")));
+
+        const img = document.createElement("img");
+        img.src = getImgUrl(name);
+        img.onerror = () => { img.style.display = "none"; };
+        chip.appendChild(img);
+
+        const span = document.createElement("span");
+        span.className = "chip-name";
+        let label = name;
+        if (isLocked) label = "✓ " + name;
+        else if (resStatus === "wrong") label = "✗ " + name;
+        span.textContent = label;
+        chip.appendChild(span);
+
+        if (!isLocked && !state.locked) {
+          const rmBtn = document.createElement("button");
+          rmBtn.className = "remove-btn";
+          rmBtn.textContent = "✕";
+          rmBtn.title = "退回手牌";
+          rmBtn.onclick = (e) => { e.stopPropagation(); removeCard(name, cat.id); };
+          chip.appendChild(rmBtn);
+        }
+
+        items.appendChild(chip);
+      });
+    }
+
+    zone.appendChild(items);
+    grid.appendChild(zone);
+  });
+}
+
+function render() {
+  renderHand();
+  renderBoard();
+  updateStats();
+}
+
+// ─── ACTIONS ───
+function toggleSelect(name) {
+  if (state.locked) return;
+  if (state.selected.has(name)) state.selected.delete(name);
+  else state.selected.add(name);
+  renderHand();
+}
+
+function placeSelected(catId) {
+  if (state.locked) return;
+  if (state.selected.size === 0) {
+    showMessage("⚠️ 請先點選左側手牌！", "error");
+    return;
+  }
+
+  let placed = 0, skipped = 0;
+  for (const name of [...state.selected]) {
+    const info = CARDS[name];
+    if (state.placed[catId].includes(name)) { skipped++; continue; }
+
+    if (!info.special) {
+      const oldCat = CATEGORIES.find(c => state.placed[c.id].includes(name));
+      if (oldCat) {
+        const oldKey = name + "|" + oldCat.id;
+        if (state.scored.has(oldKey)) { skipped++; continue; }
+        state.placed[oldCat.id] = state.placed[oldCat.id].filter(n => n !== name);
+        delete state.result[oldKey];
+      }
+    }
+
+    state.placed[catId].push(name);
+    delete state.result[name + "|" + catId];
+    state.selected.delete(name);
+    placed++;
+  }
+
+  const catLabel = CATEGORIES.find(c => c.id === catId).label;
+  if (placed) showMessage(`✅ 成功放入 ${placed} 張卡片至【${catLabel}】`, "success");
+  else showMessage("⚠️ 所選卡片已在此類別或已鎖定", "error");
+  render();
+}
+
+function removeCard(name, catId) {
+  if (state.locked) return;
+  const key = name + "|" + catId;
+  if (state.scored.has(key)) return;
+  state.placed[catId] = state.placed[catId].filter(n => n !== name);
+  delete state.result[key];
+  render();
+}
+
+function submitAnswers() {
+  if (state.locked) return;
+  const rem = getRemainingCards();
+  if (rem.length > 0) {
+    showMessage(`⚠️ 還有 ${rem.length} 張在手牌，請全部放入後再提交！`, "error");
+    return;
+  }
+
+  let newCorrect = 0, wrong = 0;
+  const pts = getPtsPerCorrect();
+  let newPts = 0;
+
+  CATEGORIES.forEach(cat => {
+    state.placed[cat.id].forEach(name => {
+      const key = name + "|" + cat.id;
+      const info = CARDS[name];
+      if (info.valid.includes(cat.id)) {
+        state.result[key] = "correct";
+        if (!state.scored.has(key)) {
+          state.scored.add(key);
+          newPts += pts;
+          newCorrect++;
+        }
+      } else {
+        state.result[key] = "wrong";
+        wrong++;
+      }
+    });
+  });
+
+  state.submitCount++;
+  state.score += newPts;
+
+  // Score popup
+  if (newPts > 0) {
+    const btn = document.getElementById("submit-btn");
+    const rect = btn.getBoundingClientRect();
+    scorePopup(newPts, rect.left + rect.width / 2 - 30, rect.top - 20);
+  }
+
+  const totalNeeded = getTotalNeeded();
+  if (wrong === 0 && state.scored.size >= totalNeeded) {
+    state.locked = true;
+    showMessage(`🎉 完美全對！本次獲得 ${newPts} 分。總分 ${state.score} 分！`, "success");
+    setTimeout(launchConfetti, 200);
+  } else {
+    showMessage(`批改完成：新答對 ${newCorrect} 題，答錯 ${wrong} 題。獲得 ${newPts} 分。`, wrong > 0 ? "error" : "success");
+  }
+
+  render();
+}
+
+function restartGame() {
+  initState();
+  showMessage("🔄 遊戲已重新開始！", "info");
+  render();
+}
+
+// ─── INIT ───
+initState();
+render();
+</script>
+</body>
+</html>
