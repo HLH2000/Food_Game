@@ -35,11 +35,11 @@ def img_url(card_name: str) -> str:
     return _IMG_URLS.get(base, GITHUB_BASE + quote(base, safe="") + ".jpg")
 
 # ─────────────── 遊戲資料 ───────────────
-CATEGORIES = ["🥩 肉類/海鮮", "🥦 蔬菜/澱粉", "🍎 水果", "🧁 甜點/飲料"]
+CATEGORIES = ["🥩 肉類/海鮮", "🥦 蔬菜/五穀澱粉", "🍎 水果", "🧁 甜點/飲料"]
 
 CAT_STYLE = {
     "🥩 肉類/海鮮": {"hdr": "#B91C1C", "border": "#B91C1C"},
-    "🥦 蔬菜/澱粉":      {"hdr": "#15803D", "border": "#15803D"},
+    "🥦 蔬菜/五穀澱粉":      {"hdr": "#15803D", "border": "#15803D"},
     "🍎 水果":      {"hdr": "#C2410C", "border": "#C2410C"},
     "🧁 甜點/飲料": {"hdr": "#6D28D9", "border": "#6D28D9"},
 }
@@ -57,17 +57,17 @@ CARDS: dict[str, dict] = {
     "扇貝":       {"valid": ["🥩 肉類/海鮮"], "special": False},
     "臘肉":       {"valid": ["🥩 肉類/海鮮"], "special": False},
     "雞排":       {"valid": ["🥩 肉類/海鮮"], "special": False},
-    "南瓜":       {"valid": ["🥦 蔬菜/澱粉"], "special": False},
-    "大白菜":     {"valid": ["🥦 蔬菜/澱粉"], "special": False},
-    "彩椒":       {"valid": ["🥦 蔬菜/澱粉"], "special": False},
-    "玉米":       {"valid": ["🥦 蔬菜/澱粉"], "special": False},
-    "白蘿蔔":     {"valid": ["🥦 蔬菜/澱粉"], "special": False},
-    "紫甘藍":     {"valid": ["🥦 蔬菜/澱粉"], "special": False},
-    "茄子":       {"valid": ["🥦 蔬菜/澱粉"], "special": False},
-    "蘆筍":       {"valid": ["🥦 蔬菜/澱粉"], "special": False},
-    "青花菜":     {"valid": ["🥦 蔬菜/澱粉"], "special": False},
-    "杏鮑菇":     {"valid": ["🥦 蔬菜/澱粉"], "special": False},
-    "蕈菇":       {"valid": ["🥦 蔬菜/澱粉"], "special": False},
+    "南瓜":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "大白菜":     {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "彩椒":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "玉米":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "白蘿蔔":     {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "紫甘藍":     {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "茄子":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "蘆筍":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "青花菜":     {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "杏鮑菇":     {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "蕈菇":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
     "奇異果":     {"valid": ["🍎 水果"], "special": False},
     "木瓜":       {"valid": ["🍎 水果"], "special": False},
     "橘子":       {"valid": ["🍎 水果"], "special": False},
