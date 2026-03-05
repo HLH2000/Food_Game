@@ -81,8 +81,6 @@ CARDS = {
     # ★ 特殊卡 (多類別)
     "★藍莓起司蛋糕": {"valid": ["🍎 水果", "🧁 甜點/飲料"], "special": True},
     "★披薩":         {"valid": ["🥩 肉類/海鮮", "🥦 蔬菜"], "special": True},
-    "★涼拌豆腐":     {"valid": ["🥦 蔬菜", "🧁 甜點/飲料"], "special": True},
-    "★滷肉飯":       {"valid": ["🥩 肉類/海鮮", "🥦 蔬菜"], "special": True},
 }
 
 BASE_SCORE = 50
