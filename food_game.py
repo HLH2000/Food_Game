@@ -7,7 +7,7 @@ import random
 st.set_page_config(page_title="食物分類遊戲 🍽️", layout="wide", initial_sidebar_state="collapsed")
 
 # ─────────────── GitHub 圖片路徑 ───────────────
-GITHUB_BASE = "https://github.com/HLH2000/Food_Game.git"
+GITHUB_BASE = "https://github.com/HLH2000/Food_Game.git/main/食物圖/"
 
 def get_image_url(card_name: str) -> str:
     """將卡片名稱對應到 GitHub 圖片 URL（特殊卡去掉★）"""
