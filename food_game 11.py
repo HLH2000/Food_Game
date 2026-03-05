@@ -35,11 +35,11 @@ def img_url(card_name: str) -> str:
     return _IMG_URLS.get(base, GITHUB_BASE + quote(base, safe="") + ".jpg")
 
 # ─────────────── 遊戲資料 ───────────────
-CATEGORIES = ["🥩 肉類/海鮮", "🥦 蔬菜/澱粉/澱粉", "🍎 水果", "🧁 甜點/飲料"]
+CATEGORIES = ["🥩 肉類/海鮮", "🥦 蔬菜/澱粉", "🍎 水果", "🧁 甜點/飲料"]
 
 CAT_STYLE = {
     "🥩 肉類/海鮮": {"hdr": "#B91C1C", "border": "#B91C1C"},
-    "🥦 蔬菜/澱粉/澱粉":      {"hdr": "#15803D", "border": "#15803D"},
+    "🥦 蔬菜/澱粉":      {"hdr": "#15803D", "border": "#15803D"},
     "🍎 水果":      {"hdr": "#C2410C", "border": "#C2410C"},
     "🧁 甜點/飲料": {"hdr": "#6D28D9", "border": "#6D28D9"},
 }
