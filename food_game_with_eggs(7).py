@@ -1,0 +1,678 @@
+import streamlit as st
+import streamlit.components.v1 as components
+import random, json
+from urllib.parse import quote
+
+# ══════════════════════════════════════════════
+# 頁面設定
+# ══════════════════════════════════════════════
+st.set_page_config(
+    page_title="食物分類遊戲 🍽️",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
+
+# ─────────────── GitHub 圖片 ───────────────
+GITHUB_BASE = "https://raw.githubusercontent.com/HLH2000/Food_Game/main/%E9%A3%9F%E7%89%A9%E5%9C%96/"
+EGG_BASE    = "https://raw.githubusercontent.com/HLH2000/Food_Game/main/egg/"
+
+EGG_URLS = {
+    2: EGG_BASE + quote("彩蛋1", safe="") + ".jpg",
+    3: EGG_BASE + quote("彩蛋3", safe="") + ".jpg",
+    4: EGG_BASE + quote("彩蛋2", safe="") + ".jpg",
+}
+WIN_EGG_URL = EGG_BASE + "IMG_20260213_213401.jpg"
+
+_IMG_URLS: dict[str, str] = {}
+
+def _build_urls():
+    for name in [
+        "培根","牛排","炸雞","烤雞腿","熟蝦","鮭魚","鮪魚","龍蝦","螃蟹","扇貝","臘肉","雞排",
+        "南瓜","大白菜","彩椒","玉米","白蘿蔔","紫甘藍","茄子","蘆筍","青花菜","杏鮑菇","蕈菇",
+        "奇異果","木瓜","橘子","水蜜桃","西瓜","藍莓",
+        "切片起司","巧克力","巧克力豆餅","甜甜圈","湯圓","糖果","糖葫蘆","鯛魚燒","優格","優酪乳","珍珠奶茶","爆米花",
+        "藍莓起司蛋糕","披薩",
+    ]:
+        _IMG_URLS[name] = GITHUB_BASE + quote(name, safe="") + ".jpg"
+
+_build_urls()
+
+def img_url(card_name: str) -> str:
+    base = card_name.lstrip("★").strip()
+    return _IMG_URLS.get(base, GITHUB_BASE + quote(base, safe="") + ".jpg")
+
+# ─────────────── 遊戲資料 ───────────────
+CATEGORIES = ["🥩 肉類/海鮮", "🥦 蔬菜/五穀澱粉", "🍎 水果", "🧁 甜點/飲料"]
+CAT_KEYS   = ["meat", "veg", "fruit", "dessert"]   # URL-safe keys
+CAT_KEY_MAP = dict(zip(CAT_KEYS, CATEGORIES))
+CAT_RKEY_MAP = dict(zip(CATEGORIES, CAT_KEYS))
+
+CAT_STYLE = {
+    "🥩 肉類/海鮮":    {"hdr": "#B91C1C", "border": "#B91C1C"},
+    "🥦 蔬菜/五穀澱粉": {"hdr": "#15803D", "border": "#15803D"},
+    "🍎 水果":         {"hdr": "#C2410C", "border": "#C2410C"},
+    "🧁 甜點/飲料":    {"hdr": "#6D28D9", "border": "#6D28D9"},
+}
+
+CARDS: dict[str, dict] = {
+    "培根":       {"valid": ["🥩 肉類/海鮮"], "special": False},
+    "牛排":       {"valid": ["🥩 肉類/海鮮"], "special": False},
+    "炸雞":       {"valid": ["🥩 肉類/海鮮"], "special": False},
+    "烤雞腿":     {"valid": ["🥩 肉類/海鮮"], "special": False},
+    "熟蝦":       {"valid": ["🥩 肉類/海鮮"], "special": False},
+    "鮭魚":       {"valid": ["🥩 肉類/海鮮"], "special": False},
+    "鮪魚":       {"valid": ["🥩 肉類/海鮮"], "special": False},
+    "龍蝦":       {"valid": ["🥩 肉類/海鮮"], "special": False},
+    "螃蟹":       {"valid": ["🥩 肉類/海鮮"], "special": False},
+    "扇貝":       {"valid": ["🥩 肉類/海鮮"], "special": False},
+    "臘肉":       {"valid": ["🥩 肉類/海鮮"], "special": False},
+    "雞排":       {"valid": ["🥩 肉類/海鮮"], "special": False},
+    "南瓜":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "大白菜":     {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "彩椒":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "玉米":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "白蘿蔔":     {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "紫甘藍":     {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "茄子":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "蘆筍":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "青花菜":     {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "杏鮑菇":     {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "蕈菇":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
+    "奇異果":     {"valid": ["🍎 水果"], "special": False},
+    "木瓜":       {"valid": ["🍎 水果"], "special": False},
+    "橘子":       {"valid": ["🍎 水果"], "special": False},
+    "水蜜桃":     {"valid": ["🍎 水果"], "special": False},
+    "西瓜":       {"valid": ["🍎 水果"], "special": False},
+    "藍莓":       {"valid": ["🍎 水果"], "special": False},
+    "切片起司":   {"valid": ["🧁 甜點/飲料"], "special": False},
+    "巧克力":     {"valid": ["🧁 甜點/飲料"], "special": False},
+    "巧克力豆餅": {"valid": ["🧁 甜點/飲料"], "special": False},
+    "甜甜圈":     {"valid": ["🧁 甜點/飲料"], "special": False},
+    "湯圓":       {"valid": ["🧁 甜點/飲料"], "special": False},
+    "糖果":       {"valid": ["🧁 甜點/飲料"], "special": False},
+    "糖葫蘆":     {"valid": ["🧁 甜點/飲料"], "special": False},
+    "鯛魚燒":     {"valid": ["🧁 甜點/飲料"], "special": False},
+    "優格":       {"valid": ["🧁 甜點/飲料"], "special": False},
+    "優酪乳":     {"valid": ["🧁 甜點/飲料"], "special": False},
+    "珍珠奶茶":   {"valid": ["🧁 甜點/飲料"], "special": False},
+    "爆米花":     {"valid": ["🧁 甜點/飲料"], "special": False},
+    "★藍莓起司蛋糕": {"valid": ["🍎 水果", "🧁 甜點/飲料"], "special": True},
+    "★披薩":         {"valid": ["🥦 蔬菜/五穀澱粉", "🧁 甜點/飲料"], "special": True},
+}
+
+BASE_SCORE   = 50
+TOTAL_NEEDED = sum(len(c["valid"]) for c in CARDS.values())
+SEP          = "|||"
+
+# ══════════════════════════════════════════════
+# query_params → 讀取選取狀態（JS 寫入，Python 讀取）
+# ══════════════════════════════════════════════
+def read_selected_from_qp() -> set[str]:
+    raw = st.query_params.get("sel", "")
+    if not raw:
+        return set()
+    return set(raw.split(SEP))
+
+def write_selected_to_qp(sel: set[str]):
+    if sel:
+        st.query_params["sel"] = SEP.join(sorted(sel))
+    else:
+        st.query_params.pop("sel", None)
+
+# ─────────────── 初始化 ───────────────
+def init_game():
+    st.session_state.update({
+        "game_init":          True,
+        "score":              0,
+        "submit_count":       0,
+        "locked":             False,
+        "scored_keys":        set(),
+        "result":             {},
+        "placed":             {cat: [] for cat in CATEGORIES},
+        "message":            "",
+        "message_type":       "info",
+        "return_wrong_avail": None,
+        "show_egg":           False,
+        "egg_submit_count":   0,
+        "show_win_egg":       False,
+    })
+    deck = list(CARDS.keys())
+    random.shuffle(deck)
+    st.session_state.deck = deck
+    st.query_params.pop("sel", None)
+    st.query_params.pop("action", None)
+
+if "game_init" not in st.session_state:
+    init_game()
+
+# ── 每次 rerun 時從 query_params 讀取最新選取狀態 ──
+selected = read_selected_from_qp()
+
+# ── 處理「放入」action（JS 透過 query_params 觸發）──
+action = st.query_params.get("action", "")
+if action.startswith("place_"):
+    cat_key   = action[len("place_"):]
+    target_cat = CAT_KEY_MAP.get(cat_key, "")
+    if target_cat:
+        # 執行放入邏輯
+        placed = st.session_state.placed
+        scored = st.session_state.scored_keys
+        result = st.session_state.result
+        placed_n = 0
+        if not selected:
+            st.session_state.message = "⚠️ 請先點選手牌卡片！"
+            st.session_state.message_type = "warning"
+        else:
+            for name in list(selected):
+                info = CARDS.get(name)
+                if not info:
+                    continue
+                if name in placed[target_cat]:
+                    continue
+                if not info["special"]:
+                    old_cat = next((c for c in CATEGORIES if name in placed[c]), None)
+                    if old_cat:
+                        old_key = f"{name}|{old_cat}"
+                        if old_key in scored:
+                            continue
+                        placed[old_cat].remove(name)
+                        result.pop(old_key, None)
+                placed[target_cat].append(name)
+                result.pop(f"{name}|{target_cat}", None)
+                placed_n += 1
+            new_sel = selected - set(placed[target_cat]) if placed_n == 0 else set()
+            # 清空選取
+            write_selected_to_qp(set())
+            if placed_n:
+                st.session_state.message = f"✅ 成功放入 {placed_n} 張至【{target_cat}】"
+                st.session_state.message_type = "success"
+            else:
+                st.session_state.message = "⚠️ 所選卡片已在此類別或已鎖定"
+                st.session_state.message_type = "warning"
+    st.query_params.pop("action", None)
+    st.rerun()
+
+# ─────────────── 輔助 ───────────────
+def get_remaining_cards() -> list[str]:
+    placed = st.session_state.placed
+    out = []
+    for name in st.session_state.deck:
+        info = CARDS[name]
+        if info["special"]:
+            cnt = sum(1 for cat in CATEGORIES if name in placed[cat])
+            if cnt < len(info["valid"]):
+                out.append(name)
+        else:
+            if not any(name in placed[cat] for cat in CATEGORIES):
+                out.append(name)
+    return out
+
+def get_pts() -> int:
+    return max(1, round(BASE_SCORE / (2 ** st.session_state.submit_count)))
+
+def get_wrong_pairs() -> list[tuple[str, str]]:
+    res = st.session_state.result
+    return [
+        (name, cat)
+        for cat in CATEGORIES
+        for name in st.session_state.placed[cat]
+        if res.get(f"{name}|{cat}") == "wrong"
+    ]
+
+# ─────────────── Callbacks ───────────────
+def remove_card(name: str, from_cat: str):
+    if st.session_state.locked:
+        return
+    key = f"{name}|{from_cat}"
+    if key in st.session_state.scored_keys:
+        return
+    st.session_state.placed[from_cat].remove(name)
+    st.session_state.result.pop(key, None)
+
+def submit_answers():
+    if st.session_state.locked:
+        return
+    rem = get_remaining_cards()
+    if rem:
+        st.session_state.message = f"⚠️ 還有 {len(rem)} 張在手牌，請全部放入後再提交！"
+        st.session_state.message_type = "warning"
+        return
+    placed  = st.session_state.placed
+    scored  = st.session_state.scored_keys
+    result  = st.session_state.result
+    pts     = get_pts()
+    new_correct = wrong = new_pts = 0
+    for cat in CATEGORIES:
+        for name in placed[cat]:
+            key = f"{name}|{cat}"
+            if cat in CARDS[name]["valid"]:
+                result[key] = "correct"
+                if key not in scored:
+                    scored.add(key)
+                    new_pts += pts
+                    new_correct += 1
+            else:
+                result[key] = "wrong"
+                wrong += 1
+    st.session_state.submit_count += 1
+    st.session_state.score += new_pts
+    if st.session_state.submit_count in EGG_URLS:
+        st.session_state.show_egg = True
+        st.session_state.egg_submit_count = st.session_state.submit_count
+    if wrong == 0 and len(scored) >= TOTAL_NEEDED:
+        st.session_state.locked = True
+        st.session_state.message = f"🎉 完美全對！本次獲得 {new_pts} 分，總分 {st.session_state.score} 分！"
+        st.session_state.message_type = "success"
+        st.session_state.return_wrong_avail = None
+        st.session_state.show_egg = False
+        st.session_state.show_win_egg = True
+    else:
+        wp = get_wrong_pairs()
+        wrong_names = "、".join(n for n, _ in wp[:6]) + ("…" if len(wp) > 6 else "")
+        st.session_state.message = (
+            f"批改完成：✅ 答對 {new_correct} 題　❌ 答錯 {wrong} 題　＋{new_pts} 分"
+            + (f"\n錯誤：{wrong_names}" if wp else "")
+        )
+        st.session_state.message_type = "info" if wrong == 0 else "warning"
+        st.session_state.return_wrong_avail = True if wrong > 0 else None
+
+def return_all_wrong():
+    pairs = get_wrong_pairs()
+    result = st.session_state.result
+    scored = st.session_state.scored_keys
+    count = 0
+    for name, cat in pairs:
+        key = f"{name}|{cat}"
+        if key not in scored:
+            st.session_state.placed[cat].remove(name)
+            result.pop(key, None)
+            count += 1
+    st.session_state.return_wrong_avail = False
+    st.session_state.message = f"↩ 已退回 {count} 張錯誤卡牌至手牌，請重新放置後再提交！"
+    st.session_state.message_type = "info"
+
+def restart_game():
+    for k in list(st.session_state.keys()):
+        del st.session_state[k]
+    st.query_params.clear()
+
+# ── Dialogs ──
+@st.dialog("🎉 彩蛋出現！")
+def show_egg_dialog(egg_url: str, submit_count: int):
+    egg_labels = {2: "第一顆彩蛋", 3: "第二顆彩蛋", 4: "第三顆彩蛋"}
+    label = egg_labels.get(submit_count, "彩蛋")
+    st.markdown(f'<div style="text-align:center;font-size:1.1rem;font-weight:800;color:#7C3AED;margin-bottom:12px;">✨ 恭喜發現{label}！✨</div>', unsafe_allow_html=True)
+    st.image(egg_url, use_container_width=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("🙈 關閉彩蛋", use_container_width=True, type="primary"):
+        st.session_state.show_egg = False
+        st.rerun()
+
+@st.dialog("🏆 恭喜通關！")
+def show_win_egg_dialog():
+    st.markdown('<div style="text-align:center;"><div style="font-size:1.5rem;font-weight:900;color:#B45309;margin-bottom:4px;">🌟 全部答對！完美通關！🌟</div><div style="font-size:0.9rem;color:#6B7280;margin-bottom:14px;">你是食物分類小達人 🍽️</div></div>', unsafe_allow_html=True)
+    st.image(WIN_EGG_URL, use_container_width=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("🎊 太棒了！", use_container_width=True, type="primary"):
+        st.session_state.show_win_egg = False
+        st.rerun()
+
+# ══════════════════════════════════════════════
+# CSS
+# ══════════════════════════════════════════════
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700;900&display=swap');
+* { font-family: 'Noto Sans TC', sans-serif !important; }
+[data-testid="stAppViewContainer"] {
+    background: #F8F7FF;
+    background-image: radial-gradient(ellipse at 0% 0%, rgba(185,28,28,0.07) 0%, transparent 50%),
+                      radial-gradient(ellipse at 100% 100%, rgba(109,40,217,0.07) 0%, transparent 50%);
+}
+[data-testid="stHeader"] { background: transparent !important; }
+.block-container { padding-top: 0.5rem !important; padding-bottom: 2rem !important; }
+.game-header {
+    background: linear-gradient(120deg, #991B1B 0%, #B45309 50%, #5B21B6 100%);
+    border-radius: 22px; padding: 18px 28px; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 8px 36px rgba(0,0,0,0.25); flex-wrap: wrap; gap: 10px;
+}
+.game-title { font-size: 1.8rem; font-weight: 900; color: #FFFFFF; letter-spacing: -0.5px; }
+.stat-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.stat-pill {
+    background: rgba(0,0,0,0.35); border: 1.5px solid rgba(255,255,255,0.3);
+    border-radius: 50px; padding: 5px 14px; color: #FFFFFF;
+    font-weight: 700; font-size: 0.82rem; white-space: nowrap;
+}
+.stat-pill b { font-size: 0.95rem; }
+.prog-wrap { background: #374151; border-radius: 50px; height: 12px; overflow: hidden; margin: 8px 0 2px; }
+.prog-fill { height: 100%; border-radius: 50px; background: #4ADE80; transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+.prog-label { font-size: 0.78rem; color: #374151; font-weight: 600; text-align: right; margin-bottom: 8px; }
+.panel-title { font-size: 1rem; font-weight: 800; color: #111827; padding-bottom: 10px; border-bottom: 2px solid #D1D5DB; margin-bottom: 10px; }
+.cat-zone { border-radius: 18px; overflow: hidden; box-shadow: 0 4px 18px rgba(0,0,0,0.12); margin-bottom: 14px; border: 2px solid transparent; }
+.cat-hdr { padding: 12px 16px; font-weight: 800; font-size: 1rem; color: #FFFFFF; display: flex; align-items: center; justify-content: space-between; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.cat-cnt { background: rgba(0,0,0,0.28); border-radius: 50px; padding: 2px 10px; font-size: 0.78rem; font-weight: 700; color: #FFFFFF; }
+.cat-body { background: white; padding: 10px; min-height: 88px; }
+.cat-empty { color: #6B7280; font-size: 0.82rem; font-weight: 600; padding: 18px 0 8px; text-align: center; }
+.pcard { border-radius: 10px; overflow: hidden; border: 3px solid #9CA3AF; background: white; position: relative; }
+.pcard.pc { border-color: #15803D; }
+.pcard.pw { border-color: #B91C1C; }
+.pcard-img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.pcard-ov { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; border: 2px solid white; }
+.pcard-ov.c { background: #15803D; color: #FFFFFF; }
+.pcard-ov.w { background: #B91C1C; color: #FFFFFF; }
+.pcard-lbl { font-size: 0.68rem; font-weight: 700; text-align: center; padding: 3px 2px; color: #111827; background: white; border-top: 2px solid #E5E7EB; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pcard-lbl.lc { color: #FFFFFF; background: #15803D; }
+.pcard-lbl.lw { color: #FFFFFF; background: #B91C1C; }
+.return-banner { background: #7F1D1D; border: 2px solid #991B1B; border-radius: 18px; padding: 16px 20px; margin: 4px 0 14px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(127,29,29,0.35); animation: pulseShadow 2.2s ease-in-out infinite; }
+@keyframes pulseShadow { 0%, 100% { box-shadow: 0 4px 20px rgba(127,29,29,0.3); } 50% { box-shadow: 0 4px 28px rgba(127,29,29,0.55); } }
+.return-icon { font-size: 2rem; line-height: 1; }
+.return-info { flex: 1; }
+.return-count { font-size: 1.15rem; font-weight: 900; color: #FEF2F2; }
+.return-desc { font-size: 0.8rem; color: #FECACA; margin-top: 3px; line-height: 1.5; font-weight: 500; }
+.return-once { font-size: 0.73rem; color: #FDE68A; font-weight: 700; margin-top: 3px; }
+.stButton > button { border-radius: 12px !important; font-weight: 800 !important; font-size: 0.88rem !important; transition: transform 0.15s ease, box-shadow 0.15s ease !important; }
+/* 退回按鈕縮小 */
+button[kind="secondary"]:has-text { font-size: 0.7rem !important; }
+div[data-testid="stButton"] button[kind="secondary"] { font-size: 0.7rem !important; padding: 2px 4px !important; }
+.stButton > button:hover:not([disabled]) { transform: translateY(-2px) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important; }
+.stButton > button[disabled] { opacity: 0.42 !important; }
+hr { border-color: #D1D5DB !important; margin: 10px 0 !important; }
+[data-testid="stDialog"] [data-testid="stImage"] img { border-radius: 16px; box-shadow: 0 8px 32px rgba(109,40,217,0.3); }
+/* iframe 無邊框 */
+iframe { border: none !important; }
+/* 退回按鈕縮小 */
+.rm-btn button { font-size: 0.65rem !important; padding: 2px 4px !important; min-height: 0 !important; height: 26px !important; }
+</style>
+""", unsafe_allow_html=True)
+
+# ══════════════════════════════════════════════
+# Dialog 觸發
+# ══════════════════════════════════════════════
+if st.session_state.get("show_win_egg", False):
+    show_win_egg_dialog()
+elif st.session_state.get("show_egg", False):
+    egg_count = st.session_state.get("egg_submit_count", 0)
+    if egg_count in EGG_URLS:
+        show_egg_dialog(EGG_URLS[egg_count], egg_count)
+
+# ══════════════════════════════════════════════
+# 狀態讀取
+# ══════════════════════════════════════════════
+rem_cards   = get_remaining_cards()
+wrong_pairs = get_wrong_pairs()
+scored      = st.session_state.scored_keys
+scored_cnt  = len(scored)
+prog_pct    = round(scored_cnt / TOTAL_NEEDED * 100)
+
+# ══════════════════════════════════════════════
+# Header
+# ══════════════════════════════════════════════
+st.markdown(f"""
+<div class="game-header">
+  <div class="game-title">🍽️ 食物分類遊戲</div>
+  <div class="stat-row">
+    <div class="stat-pill">⭐ 總分 <b>{st.session_state.score}</b></div>
+    <div class="stat-pill">🔢 提交 <b>{st.session_state.submit_count}</b> 次</div>
+    <div class="stat-pill">💎 每題 <b>{get_pts()}</b> 分</div>
+    <div class="stat-pill">🎴 手牌 <b>{len(rem_cards)}</b> 張</div>
+  </div>
+</div>
+<div class="prog-wrap"><div class="prog-fill" style="width:{prog_pct}%"></div></div>
+<div class="prog-label">完成進度 {prog_pct}%　({scored_cnt}/{TOTAL_NEEDED} 題已鎖定)</div>
+""", unsafe_allow_html=True)
+
+if st.session_state.message:
+    _styles = {
+        "success": ("✅", "#14532D", "#FFFFFF", "#4ADE80"),
+        "warning": ("⚠️", "#1F2937", "#F9FAFB", "#F59E0B"),
+        "info":    ("📋", "#1F2937", "#F9FAFB", "#60A5FA"),
+    }
+    icon, bg, text, accent = _styles.get(st.session_state.message_type, _styles["info"])
+    msg_html = st.session_state.message.replace("\n", "<br>")
+    st.markdown(f"""
+    <div style="background:{bg};border-left:5px solid {accent};border-radius:14px;
+        padding:13px 18px;margin:6px 0 4px;font-size:0.88rem;font-weight:500;
+        color:{text};line-height:1.7;display:flex;align-items:flex-start;gap:10px;">
+      <span style="font-size:1.1rem;line-height:1.5;flex-shrink:0;">{icon}</span>
+      <span>{msg_html}</span>
+    </div>""", unsafe_allow_html=True)
+
+if st.session_state.locked:
+    st.balloons()
+
+if st.session_state.return_wrong_avail is True and wrong_pairs:
+    n_wrong = len(wrong_pairs)
+    col_info, col_btn = st.columns([3.5, 1])
+    with col_info:
+        st.markdown(f"""
+        <div class="return-banner">
+          <div class="return-icon">↩️</div>
+          <div class="return-info">
+            <div class="return-count">❌ 發現 {n_wrong} 張錯誤卡牌！</div>
+            <div class="return-desc">可一鍵將所有錯誤卡牌退回手牌，重新放置後再提交。</div>
+            <div class="return-once">⚠️ 每次批改後僅能使用一次，使用後不可復原</div>
+          </div>
+        </div>""", unsafe_allow_html=True)
+    with col_btn:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.button(f"↩ 一鍵退回 {n_wrong} 張", key="return_wrong_btn",
+                  on_click=return_all_wrong, use_container_width=True, type="primary")
+
+st.divider()
+
+# ══════════════════════════════════════════════
+# 主體
+# ══════════════════════════════════════════════
+col_hand, col_board = st.columns([1, 2.5], gap="large")
+
+# ─── 左：手牌（純 JS iframe，選取零 rerun）────
+with col_hand:
+    st.markdown(
+        f'<div class="panel-title">🎴 手牌區　'
+        f'<span style="color:#6B7280;font-weight:600;font-size:0.82rem;">剩 {len(rem_cards)} 張</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    if not rem_cards:
+        st.markdown(
+            '<div style="background:#14532D;color:#FFFFFF;border-radius:12px;'
+            'padding:14px 16px;font-weight:700;font-size:0.9rem;text-align:center;">'
+            '🎉 手牌已清空！請點「提交答案」</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        cards_data = [
+            {
+                "name": name,
+                "url":  img_url(name),
+                "special": CARDS[name]["special"],
+                "selected": name in selected,
+            }
+            for name in rem_cards
+        ]
+        cards_json  = json.dumps(cards_data, ensure_ascii=False)
+        locked_json = json.dumps(st.session_state.locked)
+        sep_json    = json.dumps(SEP)
+
+        # 取得目前頁面 origin 供 query_params 操作
+        iframe_html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+*{{box-sizing:border-box;margin:0;padding:0;font-family:'Noto Sans TC',sans-serif;}}
+body{{background:transparent;padding:4px 2px;overflow:hidden;}}
+.hint{{color:#374151;font-weight:600;font-size:0.8rem;margin-bottom:8px;}}
+.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}}
+.card{{border-radius:11px;overflow:visible;border:3px solid #9CA3AF;background:white;
+  box-shadow:0 2px 8px rgba(0,0,0,0.10);cursor:pointer;position:relative;
+  transition:border-color 0.13s,box-shadow 0.13s;user-select:none;width:100%;}}
+.card.sel{{border-color:#B91C1C!important;box-shadow:0 0 0 3px rgba(185,28,28,0.22),0 4px 14px rgba(185,28,28,0.18);}}
+.card.sp{{border-color:#6D28D9;}}
+.img-wrap{{width:100%;padding-top:100%;position:relative;overflow:hidden;border-radius:8px 8px 0 0;}}
+.img-wrap img{{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}}
+.card-name{{text-align:center;padding:4px 2px 5px;font-size:0.72rem;font-weight:700;
+  color:#111827;background:white;border-top:2px solid #E5E7EB;border-radius:0 0 8px 8px;}}
+.card-name.sp-name{{color:#4C1D95;}}
+.badge-sel{{position:absolute;top:-9px;right:-9px;z-index:20;background:#B91C1C;color:#fff;
+  border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.25);}}
+.badge-star{{position:absolute;top:5px;left:5px;z-index:20;background:#5B21B6;color:#fff;
+  border-radius:5px;padding:1px 5px;font-size:8px;font-weight:900;}}
+.locked{{opacity:0.5;cursor:default;}}
+</style></head><body>
+<div class="hint">點卡片選取（可多選）→ 點右方 📥 放入</div>
+<div class="grid" id="grid"></div>
+<script>
+const CARDS  = {cards_json};
+const LOCKED = {locked_json};
+const SEP    = {sep_json};
+let selected = new Set(CARDS.filter(c=>c.selected).map(c=>c.name));
+
+function render(){{
+  const grid=document.getElementById('grid');
+  grid.innerHTML='';
+  CARDS.forEach(c=>{{
+    const isSel=selected.has(c.name);
+    const div=document.createElement('div');
+    div.className='card'+(isSel?' sel':'')+(c.special?' sp':'')+(LOCKED?' locked':'');
+    div.innerHTML=
+      (isSel?'<div class="badge-sel">✓</div>':'')+
+      (c.special?'<div class="badge-star">★特殊</div>':'')+
+      `<div class="img-wrap"><img src="${{c.url}}" loading="lazy"></div>`+
+      `<div class="card-name${{c.special?' sp-name':''}}">${{c.name}}</div>`;
+    if(!LOCKED){{
+      div.addEventListener('click',()=>{{
+        if(selected.has(c.name)) selected.delete(c.name);
+        else selected.add(c.name);
+        render();
+        syncQP();
+      }});
+    }}
+    grid.appendChild(div);
+  }});
+}}
+
+// 把選取清單寫入父頁面 URL query_params ?sel=xxx
+// Streamlit 不需要 rerun，只在「放入」按鈕按下時才用這個值
+function syncQP(){{
+  try{{
+    const url=new URL(window.parent.location.href);
+    if(selected.size>0){{
+      url.searchParams.set('sel',[...selected].join(SEP));
+    }}else{{
+      url.searchParams.delete('sel');
+    }}
+    window.parent.history.replaceState(null,'',url.toString());
+  }}catch(e){{}}
+}}
+
+render();
+
+// 圖片全部載入後，通知父頁面用 JS 調整 iframe 高度到剛好
+function resize(){{
+  const h = document.documentElement.scrollHeight + 4;
+  // 找到自己的 iframe 並設定高度
+  try{{
+    const frames = window.parent.document.querySelectorAll('iframe');
+    frames.forEach(f=>{{
+      try{{
+        if(f.contentWindow===window){{
+          f.style.height = h+'px';
+          f.height = h;
+        }}
+      }}catch(e){{}}
+    }});
+  }}catch(e){{}}
+}}
+setTimeout(resize, 200);
+setTimeout(resize, 800);
+window.addEventListener('load', ()=>setTimeout(resize,100));
+</script>
+</body></html>"""
+
+        n_rows   = (len(rem_cards) + 2) // 3
+        # 給非常寬裕的高度讓 JS 自行縮小，避免截圖
+        iframe_h = 80 + n_rows * 200
+        components.html(iframe_html, height=iframe_h, scrolling=False)
+
+# ─── 右：分類區 ─────────────────────────────
+with col_board:
+    st.markdown('<div class="panel-title">🧺 分類區</div>', unsafe_allow_html=True)
+
+    result = st.session_state.result
+    locked = st.session_state.locked
+
+    for row_cats in [CATEGORIES[:2], CATEGORIES[2:]]:
+        pair_cols = st.columns(2, gap="medium")
+        for ci, cat in enumerate(row_cats):
+            with pair_cols[ci]:
+                s      = CAT_STYLE[cat]
+                placed = st.session_state.placed[cat]
+                cnt    = len(placed)
+                cat_key = CAT_RKEY_MAP[cat]
+
+                st.markdown(
+                    f'<div class="cat-zone" style="border-color:{s["border"]};">'
+                    f'<div class="cat-hdr" style="background:{s["hdr"]};">'
+                    f'<span>{cat}</span>'
+                    f'<span class="cat-cnt">{cnt} 張</span>'
+                    f'</div><div class="cat-body">',
+                    unsafe_allow_html=True,
+                )
+
+                # 放入按鈕：觸發 Python rerun，此時 query_params 已有最新選取
+                st.button(f"📥 放入此類別", key=f"put_{cat}",
+                          on_click=lambda ck=cat_key: st.query_params.update({"action": f"place_{ck}"}),
+                          use_container_width=True)
+
+                if not placed:
+                    st.markdown('<div class="cat-empty">尚無卡片</div>', unsafe_allow_html=True)
+                else:
+                    IMG_COLS = 4
+                    for rs2 in range(0, len(placed), IMG_COLS):
+                        row_p = placed[rs2:rs2 + IMG_COLS]
+                        p_cols = st.columns(IMG_COLS, gap="small")
+                        for ci2, pname in enumerate(row_p):
+                            with p_cols[ci2]:
+                                key       = f"{pname}|{cat}"
+                                is_locked = key in scored
+                                res       = result.get(key)
+                                url       = img_url(pname)
+                                short     = pname.lstrip("★")
+                                if is_locked or res == "correct":
+                                    pw, ov_c, ov_txt, lc = "pc", "c", "✓", "lc"
+                                elif res == "wrong":
+                                    pw, ov_c, ov_txt, lc = "pw", "w", "✗", "lw"
+                                else:
+                                    pw, ov_c, ov_txt, lc = "", "", "", ""
+                                ov_html = f'<div class="pcard-ov {ov_c}">{ov_txt}</div>' if ov_c else ""
+                                st.markdown(
+                                    f'<div class="pcard {pw}">{ov_html}'
+                                    + f'<img src="{url}" class="pcard-img" loading="lazy">'
+                                    + f'<div class="pcard-lbl {lc}">{short}</div></div>',
+                                    unsafe_allow_html=True,
+                                )
+                                can_remove = not is_locked and not locked and res not in ("correct", "wrong")
+                                if can_remove:
+                                    st.markdown('<div class="rm-btn">', unsafe_allow_html=True)
+                                    st.button("↩ 退回", key=f"rm_{pname}_{cat}",
+                                              on_click=remove_card, args=(pname, cat),
+                                              use_container_width=True)
+                                    st.markdown('</div>', unsafe_allow_html=True)
+
+                st.markdown("</div></div>", unsafe_allow_html=True)
+
+# ══════════════════════════════════════════════
+# 底部
+# ══════════════════════════════════════════════
+st.divider()
+b1, b2 = st.columns([3, 1])
+with b1:
+    st.button("✅ 提交答案", type="primary",
+              disabled=st.session_state.locked,
+              on_click=submit_answers, use_container_width=True)
+with b2:
+    if st.button("🔄 重新開始", use_container_width=True):
+        restart_game()
+        st.rerun()
