@@ -27,11 +27,11 @@ _IMG_URLS: dict[str, str] = {}
 
 def _build_urls():
     for name in [
-        "培根","牛排","炸雞","烤雞腿","熟蝦","鮭魚","鮪魚","龍蝦","螃蟹","扇貝","臘肉","雞排",
+        "牛排","烤雞腿","熟蝦","鮭魚","鮪魚","龍蝦","螃蟹","扇貝","臘肉",
         "南瓜","大白菜","彩椒","玉米","白蘿蔔","紫甘藍","茄子","蘆筍","青花菜","杏鮑菇","蕈菇",
         "奇異果","木瓜","橘子","水蜜桃","西瓜","藍莓",
-        "切片起司","巧克力","巧克力豆餅","甜甜圈","湯圓","糖果","糖葫蘆","鯛魚燒","優格","優酪乳","珍珠奶茶","爆米花",
-        "藍莓起司蛋糕","披薩",
+        "切片起司","巧克力","巧克力豆餅","甜甜圈","湯圓","糖果","鯛魚燒","優格","優酪乳","珍珠奶茶","爆米花",
+        "披薩",
     ]:
         _IMG_URLS[name] = GITHUB_BASE + quote(name, safe="") + ".jpg"
 
@@ -55,9 +55,7 @@ CAT_STYLE = {
 }
 
 CARDS: dict[str, dict] = {
-    "培根":       {"valid": ["🥩 肉類/海鮮"], "special": False},
     "牛排":       {"valid": ["🥩 肉類/海鮮"], "special": False},
-    "炸雞":       {"valid": ["🥩 肉類/海鮮"], "special": False},
     "烤雞腿":     {"valid": ["🥩 肉類/海鮮"], "special": False},
     "熟蝦":       {"valid": ["🥩 肉類/海鮮"], "special": False},
     "鮭魚":       {"valid": ["🥩 肉類/海鮮"], "special": False},
@@ -66,7 +64,6 @@ CARDS: dict[str, dict] = {
     "螃蟹":       {"valid": ["🥩 肉類/海鮮"], "special": False},
     "扇貝":       {"valid": ["🥩 肉類/海鮮"], "special": False},
     "臘肉":       {"valid": ["🥩 肉類/海鮮"], "special": False},
-    "雞排":       {"valid": ["🥩 肉類/海鮮"], "special": False},
     "南瓜":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
     "大白菜":     {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
     "彩椒":       {"valid": ["🥦 蔬菜/五穀澱粉"], "special": False},
@@ -90,13 +87,11 @@ CARDS: dict[str, dict] = {
     "甜甜圈":     {"valid": ["🧁 甜點/飲料"], "special": False},
     "湯圓":       {"valid": ["🧁 甜點/飲料"], "special": False},
     "糖果":       {"valid": ["🧁 甜點/飲料"], "special": False},
-    "糖葫蘆":     {"valid": ["🧁 甜點/飲料"], "special": False},
     "鯛魚燒":     {"valid": ["🧁 甜點/飲料"], "special": False},
     "優格":       {"valid": ["🧁 甜點/飲料"], "special": False},
     "優酪乳":     {"valid": ["🧁 甜點/飲料"], "special": False},
     "珍珠奶茶":   {"valid": ["🧁 甜點/飲料"], "special": False},
     "爆米花":     {"valid": ["🧁 甜點/飲料"], "special": False},
-    "★藍莓起司蛋糕": {"valid": ["🍎 水果", "🧁 甜點/飲料"], "special": True},
     "★披薩":         {"valid": ["🥦 蔬菜/五穀澱粉", "🧁 甜點/飲料"], "special": True},
 }
 
